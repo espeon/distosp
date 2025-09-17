@@ -36,16 +36,16 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            binary_name: discord-to-sp-bot
-            asset_name: discord-to-sp-bot-linux-x86_64
+            binary_name: discord-to-sp-distosp
+            asset_name: discord-to-sp-distosp-linux-x86_64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            binary_name: bot.exe
-            asset_name: discord-to-sp-bot-windows-x86_64.exe
+            binary_name: distosp.exe
+            asset_name: discord-to-sp-distosp-windows-x86_64.exe
           - os: macos-latest
             target: x86_64-apple-darwin
-            binary_name: discord-to-sp-bot
-            asset_name: discord-to-sp-bot-macos-x86_64
+            binary_name: discord-to-sp-distosp
+            asset_name: discord-to-sp-distosp-macos-x86_64
 
     runs-on: ${{ matrix.os }}
 
@@ -77,15 +77,15 @@ jobs:
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build
-        run: cargo build --release --target ${{ matrix.target }} --bin bot
+        run: cargo build --release --target ${{ matrix.target }} --bin distosp
 
       - name: Copy binary (Unix)
         if: matrix.os != 'windows-latest'
-        run: cp target/${{ matrix.target }}/release/bot ${{ matrix.asset_name }}
+        run: cp target/${{ matrix.target }}/release/distosp ${{ matrix.asset_name }}
 
       - name: Copy binary (Windows)
         if: matrix.os == 'windows-latest'
-        run: copy target\${{ matrix.target }}\release\bot.exe ${{ matrix.asset_name }}
+        run: copy target\${{ matrix.target }}\release\distosp.exe ${{ matrix.asset_name }}
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
