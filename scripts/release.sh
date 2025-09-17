@@ -65,7 +65,7 @@ echo "Bumping $BUMP_TYPE: $CURRENT_VERSION -> $NEW_VERSION"
 
 # Update version in Cargo.toml
 echo "Updating version to $NEW_VERSION in bot/Cargo.toml..."
-sed -i.bak "s/^version = \".*\"/version = \"$NEW_VERSION\"/" bot/Cargo.toml
+sed -i.bak "0,/^version = /s/^version = \".*\"/version = \"$NEW_VERSION\"/" bot/Cargo.toml
 rm bot/Cargo.toml.bak
 
 # Update Cargo.lock
