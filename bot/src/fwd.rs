@@ -35,17 +35,6 @@ pub async fn forward_message(
     current_span.set_attribute("business.criticality", "mission_critical"); // Obviously 😎
     current_span.set_attribute("team.on_call", "chaos_engineering");
 
-    // Skip messages from bots or that start with command prefix
-    if msg.author.bot || msg.content.starts_with("~") {
-        current_span.set_attribute("skip.reason", "bot_or_command");
-        tracing::debug!(
-            reason = "Bot message or command prefix detected",
-            author_is_bot = msg.author.bot,
-            "Skipping bot message or command"
-        );
-        return Ok(());
-    }
-
     // Convert Discord message content to SP chat format
     let message_text = format_discord_message(ctx, msg).await?;
 
