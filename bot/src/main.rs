@@ -71,8 +71,24 @@ async fn setup_atp_sess() -> anyhow::Result<AtpAgent<MemorySessionStore, Reqwest
     Ok(agent)
 }
 
-/// Initialize OpenTelemetry with OTLP exporter (completely overkill but hilarious! 🚀)
+/// Initialize OpenTelemetry with OTLP exporter if configuration is present
 fn init_telemetry() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
+    // Check if OpenTelemetry configuration is present
+    let otel_enabled = env::var("OTEL_EXPORTER_OTLP_ENDPOINT").is_ok()
+        || env::var("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT").is_ok()
+        || env::var("OTEL_SERVICE_NAME").is_ok();
+
+    if !otel_enabled {
+        info!("No OpenTelemetry configuration found, using basic tracing");
+        tracing_subscriber::fmt()
+            .with_env_filter(
+                tracing_subscriber::EnvFilter::try_from_default_env()
+                    .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
+            )
+            .init();
+        return Ok(());
+    }
+
     info!("🚀 Initializing OpenTelemetry (because we're fancy!)");
 
     // Create resource with service information
@@ -125,16 +141,10 @@ fn init_telemetry() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'sta
 async fn main() {
     dotenv().ok();
 
-    // Initialize OpenTelemetry (because a Discord bot obviously needs enterprise-grade observability! 📊)
-    if let Err(e) = init_telemetry() {
-        eprintln!("Failed to initialize OpenTelemetry: {}", e);
-        eprintln!("Falling back to basic tracing...");
+    // Initialize telemetry (with OpenTelemetry if configured)
+    init_telemetry().expect("Failed to initialize telemetry");
 
-        // Fallback to basic tracing if OTEL fails
-        tracing_subscriber::fmt().init();
-    }
-
-    info!("🎉 Starting Discord to SP chat bridge bot with full observability stack!");
+    info!("🎉 Starting Discord to SP chat bridge bot!");
 
     let discord_token = env::var("DISCORD_TOKEN").expect("Expected DISCORD_TOKEN in environment");
 
