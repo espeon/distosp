@@ -1,38 +1,43 @@
-FROM rust:latest AS buildah
-
-RUN update-ca-certificates
-
-# Create appuser
-ENV USER=app
-ENV UID=10001
-
-RUN adduser \
-    --disabled-password \
-    --gecos "" \
-    --home "/nonexistent" \
-    --shell "/sbin/nologin" \
-    --no-create-home \
-    --uid "${UID}" \
-    "${USER}"
-
-WORKDIR /buildah
-
-COPY ./ .
-
-RUN cargo build --release
-
-FROM gcr.io/distroless/cc
-
-# Import from builder.
-COPY --from=buildah /etc/passwd /etc/passwd
-COPY --from=buildah /etc/group /etc/group
+# Build stage
+FROM rust:1.80-slim AS builder
 
 WORKDIR /app
 
-# Copy our build
-COPY --from=buildah /buildah/target/release/deskhelp ./
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Use an unprivileged user.
-USER app:app
+# Copy workspace files
+COPY Cargo.toml Cargo.lock ./
+COPY bot/ ./bot/
+COPY lex/ ./lex/
 
-CMD ["./app/deskhelp"]
+# Build the application
+RUN cargo build --release --bin bot
+
+# Runtime stage
+FROM debian:bookworm-slim
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app user
+RUN useradd -r -s /bin/false appuser
+
+# Copy the binary
+COPY --from=builder /app/target/release/bot /usr/local/bin/discord-to-sp-bot
+
+# Set ownership and permissions
+RUN chown appuser:appuser /usr/local/bin/discord-to-sp-bot
+
+# Switch to non-root user
+USER appuser
+
+# Expose any necessary ports (if needed)
+# EXPOSE 8080
+
+ENTRYPOINT ["/usr/local/bin/discord-to-sp-bot"]
