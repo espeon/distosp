@@ -1,0 +1,32 @@
+{
+  "lexicon": 1,
+  "id": "place.stream.chat.defs",
+  "defs": {
+    "messageView": {
+      "type": "object",
+      "required": ["uri", "cid", "author", "record", "indexedAt"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "author": {
+          "type": "ref",
+          "ref": "app.bsky.actor.defs#profileViewBasic"
+        },
+        "record": { "type": "unknown" },
+        "indexedAt": { "type": "string", "format": "datetime" },
+        "chatProfile": {
+          "type": "ref",
+          "ref": "place.stream.chat.profile"
+        },
+        "replyTo": {
+          "type": "union",
+          "refs": ["place.stream.chat.defs#messageView"]
+        },
+        "deleted": {
+          "type": "boolean",
+          "description": "If true, this message has been deleted or labeled and should be cleared from the cache"
+        }
+      }
+    }
+  }
+}
