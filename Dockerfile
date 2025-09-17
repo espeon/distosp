@@ -15,7 +15,7 @@ COPY bot/ ./bot/
 COPY lex/ ./lex/
 
 # Build the application
-RUN cargo build --release --bin bot
+RUN cargo build --release --bin distosp
 
 # Runtime stage
 FROM debian:bookworm-slim
@@ -29,7 +29,7 @@ RUN apt-get update && apt-get install -y \
 RUN useradd -r -s /bin/false appuser
 
 # Copy the binary
-COPY --from=builder /app/target/release/bot /usr/local/bin/discord-to-sp-bot
+COPY --from=builder /app/target/release/distosp /usr/local/bin/discord-to-sp-bot
 
 # Set ownership and permissions
 RUN chown appuser:appuser /usr/local/bin/discord-to-sp-bot
