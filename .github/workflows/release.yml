@@ -38,14 +38,18 @@ jobs:
             target: x86_64-unknown-linux-gnu
             binary_name: discord-to-sp-distosp
             asset_name: discord-to-sp-distosp-linux-x86_64
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            binary_name: discord-to-sp-distosp
+            asset_name: discord-to-sp-distosp-linux-aarch64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             binary_name: distosp.exe
             asset_name: discord-to-sp-distosp-windows-x86_64.exe
           - os: macos-latest
-            target: x86_64-apple-darwin
+            target: aarch64-apple-darwin
             binary_name: discord-to-sp-distosp
-            asset_name: discord-to-sp-distosp-macos-x86_64
+            asset_name: discord-to-sp-distosp-macos-aarch64
 
     runs-on: ${{ matrix.os }}
 
