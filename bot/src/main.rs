@@ -1,12 +1,12 @@
 use ::serenity::all::{EventHandler, GatewayIntents, Message};
 use ::serenity::prelude::TypeMapKey;
-use atrium_api::agent::atp_agent::store::MemorySessionStore;
 use atrium_api::agent::atp_agent::AtpAgent;
+use atrium_api::agent::atp_agent::store::MemorySessionStore;
 use atrium_xrpc_client::reqwest::ReqwestClient;
 use dotenvy::dotenv;
 use opentelemetry::KeyValue;
 use opentelemetry_otlp::{OtlpExporterPipeline, WithExportConfig};
-use opentelemetry_sdk::{trace as sdktrace, Resource};
+use opentelemetry_sdk::{Resource, trace as sdktrace};
 use opentelemetry_semantic_conventions as semconv;
 use poise::serenity_prelude as serenity;
 use std::env;
@@ -34,6 +34,10 @@ struct Handler;
 #[serenity::async_trait]
 impl EventHandler for Handler {
     async fn message(&self, ctx: serenity::prelude::Context, msg: Message) {
+        // is the message from a bot?
+        if msg.author.bot {
+            return;
+        }
         println!("Received message in {:?}: {}", msg.channel_id, msg.content);
         // Check if this channel should be forwarded to Bluesky
         if fwd::should_forward_channel(&msg.channel_id.to_string()) {
