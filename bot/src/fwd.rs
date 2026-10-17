@@ -21,7 +21,6 @@ pub async fn forward_message(
     msg: &Message,
     atp_client: &AtpClient,
 ) -> Result<(), Error> {
-    // Add some completely unnecessary but enterprise-grade telemetry attributes 🎭
     let current_span = Span::current();
     current_span.set_attribute(
         "discord.guild_id",
