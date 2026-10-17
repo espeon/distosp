@@ -32,9 +32,7 @@ pub async fn forward_message(
     current_span.set_attribute("discord.channel_type", "text"); // Always text for now
     current_span.set_attribute("discord.has_attachments", msg.attachments.len() > 0);
     current_span.set_attribute("discord.attachment_count", msg.attachments.len() as i64);
-    current_span.set_attribute("business.criticality", "mission_critical"); // Obviously 😎
-    current_span.set_attribute("team.on_call", "chaos_engineering");
-
+    
     // Convert Discord message content to SP chat format
     let message_text = format_discord_message(ctx, msg).await?;
 
@@ -114,11 +112,10 @@ pub async fn forward_message(
         )
         .await?;
 
-    // Record success metrics and attributes (because why not track EVERYTHING! 📈)
+    // Record success metrics and attributes
     current_span.set_attribute("atp.record_uri", result.uri.clone());
     current_span.set_attribute("atp.record_cid", format!("{:?}", result.cid));
-    current_span.set_attribute("operation.success", true);
-    current_span.set_attribute("sla.performance_tier", "premium"); // We're fancy! ✨
+    current_span.set_attribute("atp.post_operation.success", true);
 
     tracing::debug!(
         destination = "sp_chat",
