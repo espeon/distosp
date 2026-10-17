@@ -93,7 +93,7 @@ fn init_telemetry() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'sta
         return Ok(());
     }
 
-    info!("🚀 Initializing OpenTelemetry (because we're fancy!)");
+    info!("Initializing OpenTelemetry");
 
     // Create resource with service information
     let resource = Resource::new(vec![
@@ -102,9 +102,7 @@ fn init_telemetry() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'sta
             semconv::resource::SERVICE_VERSION,
             env!("CARGO_PKG_VERSION"),
         ),
-        KeyValue::new(semconv::resource::SERVICE_NAMESPACE, "discord-bridge"),
-        KeyValue::new("deployment.environment", "production"), // 😎
-        KeyValue::new("team.name", "chaos-engineering"),       // 🔥
+        KeyValue::new(semconv::resource::SERVICE_NAMESPACE, "discord-bridge")
     ]);
 
     // Set up OTLP exporter (defaults to http://localhost:4318)
@@ -119,7 +117,8 @@ fn init_telemetry() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'sta
         .with_trace_config(
             sdktrace::config()
                 .with_resource(resource)
-                .with_sampler(sdktrace::Sampler::AlwaysOn), // Sample everything because YOLO
+                // This samples everything!
+                .with_sampler(sdktrace::Sampler::AlwaysOn),
         )
         .install_batch(opentelemetry_sdk::runtime::Tokio)?;
 
@@ -137,7 +136,7 @@ fn init_telemetry() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'sta
         .with(otel_layer)
         .init();
 
-    info!("✨ OpenTelemetry initialized successfully!");
+    info!("OpenTelemetry initialized successfully!");
     Ok(())
 }
 
@@ -148,7 +147,7 @@ async fn main() {
     // Initialize telemetry (with OpenTelemetry if configured)
     init_telemetry().expect("Failed to initialize telemetry");
 
-    info!("🎉 Starting Discord to SP chat bridge bot!");
+    info!("Starting Discord to SP chat bridge bot!");
 
     let discord_token = env::var("DISCORD_TOKEN").expect("Expected DISCORD_TOKEN in environment");
 
