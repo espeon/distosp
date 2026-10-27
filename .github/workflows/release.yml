@@ -13,42 +13,39 @@ env:
 jobs:
   create-release:
     runs-on: ubuntu-latest
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-      release_id: ${{ steps.create_release.outputs.id }}
+    permissions:
+      contents: write
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "Release ${{ github.ref_name }}" \
+            --generate-notes \
+            --verify-tag
 
   build-binaries:
     needs: create-release
+    permissions:
+      contents: write
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            binary_name: discord-to-sp-distosp
             asset_name: discord-to-sp-distosp-linux-x86_64
           - os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
-            binary_name: discord-to-sp-distosp
             asset_name: discord-to-sp-distosp-linux-aarch64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            binary_name: distosp.exe
             asset_name: discord-to-sp-distosp-windows-x86_64.exe
           - os: macos-latest
             target: aarch64-apple-darwin
-            binary_name: discord-to-sp-distosp
             asset_name: discord-to-sp-distosp-macos-aarch64
 
     runs-on: ${{ matrix.os }}
@@ -89,17 +86,14 @@ jobs:
 
       - name: Copy binary (Windows)
         if: matrix.os == 'windows-latest'
-        run: copy target\${{ matrix.target }}\release\distosp.exe ${{ matrix.asset_name }}
+        shell: bash
+        run: cp target/${{ matrix.target }}/release/distosp.exe ${{ matrix.asset_name }}
 
       - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./${{ matrix.asset_name }}
-          asset_name: ${{ matrix.asset_name }}
-          asset_content_type: application/octet-stream
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: gh release upload "${{ github.ref_name }}" "${{ matrix.asset_name }}" --clobber
 
   build-docker:
     runs-on: ubuntu-latest
