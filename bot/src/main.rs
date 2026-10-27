@@ -5,9 +5,10 @@ use atrium_api::agent::atp_agent::store::MemorySessionStore;
 use atrium_xrpc_client::reqwest::ReqwestClient;
 use dotenvy::dotenv;
 use opentelemetry::KeyValue;
-use opentelemetry_otlp::{OtlpExporterPipeline, WithExportConfig};
-use opentelemetry_sdk::{Resource, trace as sdktrace};
-use opentelemetry_semantic_conventions as semconv;
+use opentelemetry::trace::TracerProvider as _;
+use opentelemetry_otlp::SpanExporter;
+use opentelemetry_sdk::Resource;
+use opentelemetry_sdk::trace::{Sampler, SdkTracerProvider};
 use poise::serenity_prelude as serenity;
 use std::env;
 use std::sync::Arc;
@@ -95,35 +96,25 @@ fn init_telemetry() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'sta
 
     info!("Initializing OpenTelemetry");
 
-    // Create resource with service information
-    let resource = Resource::new(vec![
-        KeyValue::new(semconv::resource::SERVICE_NAME, "discord-to-sp-bot"),
-        KeyValue::new(
-            semconv::resource::SERVICE_VERSION,
-            env!("CARGO_PKG_VERSION"),
-        ),
-        KeyValue::new(semconv::resource::SERVICE_NAMESPACE, "discord-bridge")
-    ]);
+    // The OTLP exporter resolves its endpoint from the OTEL_EXPORTER_OTLP_* environment
+    // variables itself, defaulting to gRPC on http://localhost:4317.
+    let exporter = SpanExporter::builder().with_tonic().build()?;
 
-    // Set up OTLP exporter (defaults to http://localhost:4318)
-    let otlp_endpoint = env::var("OTEL_EXPORTER_OTLP_ENDPOINT")
-        .unwrap_or_else(|_| "http://localhost:4318".to_string());
+    let resource = Resource::builder()
+        .with_service_name("discord-to-sp-bot")
+        .with_attribute(KeyValue::new("service.version", env!("CARGO_PKG_VERSION")))
+        .with_attribute(KeyValue::new("service.namespace", "discord-bridge"))
+        .build();
 
-    info!(endpoint = %otlp_endpoint, "Setting up OTLP exporter");
-
-    let tracer = opentelemetry_otlp::new_pipeline()
-        .tracing()
-        .with_exporter(OtlpExporterPipeline.tonic().with_endpoint(&otlp_endpoint))
-        .with_trace_config(
-            sdktrace::config()
-                .with_resource(resource)
-                // This samples everything!
-                .with_sampler(sdktrace::Sampler::AlwaysOn),
-        )
-        .install_batch(opentelemetry_sdk::runtime::Tokio)?;
+    let provider = SdkTracerProvider::builder()
+        // This samples everything!
+        .with_sampler(Sampler::AlwaysOn)
+        .with_resource(resource)
+        .with_batch_exporter(exporter)
+        .build();
 
     // Create OpenTelemetry layer
-    let otel_layer = tracing_opentelemetry::layer().with_tracer(tracer);
+    let otel_layer = tracing_opentelemetry::layer().with_tracer(provider.tracer("distosp"));
 
     // Create subscriber with both console and OpenTelemetry layers
     tracing_subscriber::registry()
@@ -135,6 +126,10 @@ fn init_telemetry() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'sta
         )
         .with(otel_layer)
         .init();
+
+    // Hand the provider to the global slot so the batch exporter keeps running for the
+    // lifetime of the process instead of shutting down when this function returns.
+    opentelemetry::global::set_tracer_provider(provider);
 
     info!("OpenTelemetry initialized successfully!");
     Ok(())
