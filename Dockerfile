@@ -1,5 +1,5 @@
 # Build stage
-FROM rust:1.89-slim AS builder
+FROM rust:1.97-slim AS builder
 
 WORKDIR /app
 
@@ -18,7 +18,7 @@ COPY lex/ ./lex/
 RUN cargo build --release --bin distosp
 
 # Runtime stage
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
