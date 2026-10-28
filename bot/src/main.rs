@@ -60,7 +60,8 @@ impl EventHandler for Handler {
 }
 
 async fn setup_atp_sess() -> anyhow::Result<AtpAgent<MemorySessionStore, ReqwestClient>> {
-    let xrpc = ReqwestClient::new("https://bsky.social".to_string());
+    let pds = std::env::var("PDS_URL").unwrap_or_else(|_| "https://bsky.social".to_string());
+    let xrpc = ReqwestClient::new(pds);
     let store = MemorySessionStore::default();
     let agent = AtpAgent::new(xrpc, store);
 
