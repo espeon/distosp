@@ -42,6 +42,7 @@ Before starting, make sure you have:
 2. **If you're using a different ATProto server**:
    - Contact your PDS administrator for the correct login details
    - Use your account credentials as provided
+   - Set `PDS_URL` in your `.env` file to that server's endpoint (defaults to `https://bsky.social`)
 
 ### Step-by-Step Setup
 

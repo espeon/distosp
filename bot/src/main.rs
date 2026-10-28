@@ -60,7 +60,12 @@ impl EventHandler for Handler {
 }
 
 async fn setup_atp_sess() -> anyhow::Result<AtpAgent<MemorySessionStore, ReqwestClient>> {
-    let pds = std::env::var("PDS_URL").unwrap_or_else(|_| "https://bsky.social".to_string());
+    // atrium joins the base URI as "{base}/xrpc/{nsid}", so a trailing slash here
+    // would produce a double slash and be rejected by the PDS.
+    let pds = std::env::var("PDS_URL")
+        .unwrap_or_else(|_| "https://bsky.social".to_string())
+        .trim_end_matches('/')
+        .to_string();
     let xrpc = ReqwestClient::new(pds);
     let store = MemorySessionStore::default();
     let agent = AtpAgent::new(xrpc, store);
